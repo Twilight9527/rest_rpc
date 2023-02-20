@@ -20,6 +20,8 @@ struct ssl_configure {
   std::string key_file;
 };
 
+// 继承enable_shared_from_this的原因在于能够在类内部拿到this的shared_ptr版本，用于异步操作
+// 继承noncopyable的原因在于显式的标记此类不可复制
 class connection : public std::enable_shared_from_this<connection>,
                    private asio::noncopyable {
 public:
@@ -142,6 +144,7 @@ public:
 private:
   void read_head() {
     reset_timer();
+    // 异步操作前获取this的共享版本，避免异步回调返回后本对象被析构
     auto self(this->shared_from_this());
     async_read_head([this, self](asio::error_code ec, std::size_t length) {
       if (!socket_.is_open()) {

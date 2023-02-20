@@ -1,3 +1,6 @@
+/*
+服务器主类
+*/
 #ifndef REST_RPC_RPC_SERVER_H_
 #define REST_RPC_RPC_SERVER_H_
 
@@ -33,6 +36,7 @@ public:
     do_await_stop();
   }
 
+  // 增加了ssl配置的重载构造函数
   rpc_server(unsigned short port, size_t size, ssl_configure ssl_conf,
              size_t timeout_seconds = 15, size_t check_seconds = 10)
       : rpc_server(port, size, timeout_seconds, check_seconds) {
@@ -239,7 +243,7 @@ private:
     has_stoped_ = true;
   }
 
-  io_service_pool io_service_pool_;
+  io_service_pool io_service_pool_;           // 服务池
   tcp::acceptor acceptor_;
   std::shared_ptr<connection> conn_;
   std::shared_ptr<std::thread> thd_;
