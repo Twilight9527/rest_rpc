@@ -33,6 +33,7 @@ public:
 
   ~connection() { close(); }
 
+  // 开始函数，如果是ssl请求，进行异步握手，否则开始读消息头部
   void start() {
     if (is_ssl() && !has_shake_) {
       async_handshake();
@@ -40,10 +41,11 @@ public:
       read_head();
     }
   }
-
+  // 返回socket对象的引用
   tcp::socket &socket() { return socket_; }
-
+  // 返回连接是否关闭
   bool has_closed() const { return has_closed_; }
+  // 返回请求id
   uint64_t request_id() const { return req_id_; }
 
   void response(uint64_t req_id, std::string data,

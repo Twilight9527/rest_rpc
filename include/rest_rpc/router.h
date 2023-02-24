@@ -72,7 +72,7 @@ public:
   router() = default;
 
 private:
-  router(const router &) = delete;
+  router(const router &) = delete;   // 已经继承了noncopyable，这行冗余了
   router(router &&) = delete;
 
   template <typename F, size_t... I, typename Arg, typename... Args>

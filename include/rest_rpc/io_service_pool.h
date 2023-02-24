@@ -7,6 +7,7 @@
 
 namespace rest_rpc {
 namespace rpc_service {
+// 封装的IO服务池
 class io_service_pool : private asio::noncopyable {
 public:
   explicit io_service_pool(std::size_t pool_size) : next_io_service_(0) {
@@ -24,6 +25,7 @@ public:
   void run() {
     std::vector<std::shared_ptr<std::thread>> threads;
     for (std::size_t i = 0; i < io_services_.size(); ++i) {
+      // 疑问：io_services中都是new出来的，那实际run的是什么呢？
       threads.emplace_back(std::make_shared<std::thread>(
           [](io_service_ptr svr) { svr->run(); }, io_services_[i]));
     }
@@ -38,6 +40,7 @@ public:
     }
   }
 
+  // 获取io服务池的引用
   asio::io_context &get_io_service() {
     asio::io_context &io_service = *io_services_[next_io_service_];
     ++next_io_service_;

@@ -16,6 +16,7 @@ using asio::ip::tcp;
 namespace rest_rpc {
 namespace rpc_service {
 using rpc_conn = std::weak_ptr<connection>;
+// 显示标识server类不能够拷贝
 class rpc_server : private asio::noncopyable {
 public:
   rpc_server(unsigned short port, size_t size, size_t timeout_seconds = 15,
@@ -33,6 +34,7 @@ public:
 #if defined(SIGQUIT)
     signals_.add(SIGQUIT);
 #endif // defined(SIGQUIT)
+    // 开始异步等待信号中断
     do_await_stop();
   }
 
@@ -56,11 +58,13 @@ public:
 
   void run() { io_service_pool_.run(); }
 
+  // 服务注册接口
   template <ExecMode model = ExecMode::sync, typename Function>
   void register_handler(std::string const &name, const Function &f) {
     router_.register_handler<model>(name, f);
   }
 
+  // 服务注册接口（重载）
   template <ExecMode model = ExecMode::sync, typename Function, typename Self>
   void register_handler(std::string const &name, const Function &f,
                         Self *self) {
@@ -92,6 +96,7 @@ public:
   }
 
 private:
+  // 接受新连接的函数
   void do_accept() {
     conn_.reset(new connection(io_service_pool_.get_io_service(),
                                timeout_seconds_, router_));
@@ -131,6 +136,7 @@ private:
     });
   }
 
+  // 清理连接函数，有单独的清理线程check_thread_，线程在构造函数中启动
   void clean() {
     while (!stop_check_) {
       std::unique_lock<std::mutex> lock(mtx_);
@@ -149,6 +155,7 @@ private:
     }
   }
 
+  // 清理订阅发布模式的的连接，在pub_sub_thread_线程中，在构造函数中启动
   void clean_sub_pub() {
     while (!stop_check_pub_sub_) {
       std::unique_lock<std::mutex> lock(sub_mtx_);
@@ -196,6 +203,7 @@ private:
     }
   }
 
+  // 获取数据的模板特化版本
   template <typename T>
   typename std::enable_if<std::is_assignable<std::string, T>::value,
                           std::shared_ptr<std::string>>::type
@@ -212,11 +220,13 @@ private:
     return std::make_shared<std::string>(buf.data(), buf.size());
   }
 
+  // 异步等待中断信号
   void do_await_stop() {
     signals_.async_wait(
         [this](std::error_code /*ec*/, int /*signo*/) { stop(); });
   }
 
+  // 停止服务
   void stop() {
     if (has_stoped_) {
       return;
@@ -249,10 +259,10 @@ private:
   std::shared_ptr<std::thread> thd_;
   std::size_t timeout_seconds_;
 
-  std::unordered_map<int64_t, std::shared_ptr<connection>> connections_;
+  std::unordered_map<int64_t, std::shared_ptr<connection>> connections_;    // 保存所有的连接
   int64_t conn_id_ = 0;
   std::mutex mtx_;
-  std::shared_ptr<std::thread> check_thread_;
+  std::shared_ptr<std::thread> check_thread_;       // 检查连接的线程
   size_t check_seconds_;
   bool stop_check_ = false;
   std::condition_variable cv_;
